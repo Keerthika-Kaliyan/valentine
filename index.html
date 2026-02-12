@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirthika & Kevin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@700&family=Special+Elite&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Quicksand', sans-serif; 
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); 
+            overflow-x: hidden; 
+            min-height: 100vh;
+            margin: 0;
+            transition: background 2s ease;
+        }
+        .romantic { font-family: 'Dancing Script', cursive; color: #d81b60; }
+        
+        .bg-element {
+            position: absolute;
+            font-size: 2.5rem;
+            opacity: 0.8;
+            animation: fall-down 10s linear forwards;
+            z-index: 50;
+            pointer-events: none;
+        }
+        @keyframes fall-down {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg); opacity: 0.3; }
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 3s infinite;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        #map { height: 380px; border-radius: 30px; border: 8px solid white; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); }
+        .custom-label { 
+            font-weight: 800; 
+            color: #d81b60 !important; 
+            text-align: center; 
+            white-space: nowrap; 
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #f8bbd0;
+            border-radius: 12px;
+            padding: 4px 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .leaflet-tooltip-top:before, .leaflet-tooltip-bottom:before { display: none; }
+        
+        .pulse-icon { font-size: 32px; display: flex !important; justify-content: center; align-items: center; width: 32px !important; height: 32px !important; }
+        .pulse-icon span { display: block; animation: lubtub 1.2s ease-in-out infinite; }
+        @keyframes lubtub { 0% { transform: scale(1); } 15% { transform: scale(1.3); } 30% { transform: scale(1.1); } 45% { transform: scale(1.4); } 100% { transform: scale(1); } }
+
+        .btn-yes { background: #d81b60; color: white; box-shadow: 0 10px 20px rgba(216, 27, 96, 0.3); z-index: 10; }
+        #no-btn {
+            background-color: white !important;
+            color: #d81b60 !important;
+            border: 2px solid #f8bbd0 !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            cursor: pointer;
+            z-index: 999;
+            display: inline-block;
+            min-width: 100px;
+        }
+
+        #page2 { display: none; padding: 2rem; z-index: 20; position: relative; }
+        
+        .promise-card { 
+            background: rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(12px); 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.3); 
+            padding: 20px; 
+            color: white; 
+            margin-top: 20px;
+            animation: float-promise 4s ease-in-out infinite, glow-promise 3s ease-in-out infinite alternate;
+        }
+        @keyframes float-promise {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+        @keyframes glow-promise {
+            from { box-shadow: 0 0 10px rgba(216, 27, 96, 0.2); }
+            to { box-shadow: 0 0 25px rgba(255, 215, 0, 0.4); }
+        }
+        
+        /* INCREASED SIZE HERE */
+        .letter-wrapper { position: relative; width: 450px; max-width: 90vw; height: 300px; transition: 0.5s; cursor: pointer; margin-top: 6rem; }
+        
+        .envelope {
+            position: absolute; width: 100%; height: 100%;
+            background: #d4a76a;
+            border-radius: 0 0 10px 10px;
+            z-index: 3;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+        
+        .envelope-flap {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #c19a6b;
+            clip-path: polygon(0 0, 50% 60%, 100% 0);
+            transition: transform 0.6s ease;
+            transform-origin: top;
+            z-index: 4;
+            border-radius: 5px;
+        }
+        .letter-wrapper.open .envelope-flap { transform: rotateX(180deg); z-index: 1; }
+
+        .letter-content {
+            position: absolute; top: 15px; left: 15px; right: 15px; bottom: 15px;
+            background: #fdf5e6; color: #2c1e1e; padding: 25px;
+            font-family: 'Special Elite', serif; font-size: 0.9rem;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            transition: transform 0.8s ease-in-out; 
+            transform: translateY(0);
+            z-index: 2; 
+            border: 1px solid #dcd1bd;
+            overflow-y: auto;
+        }
+        /* UPDATED TRANSLATION TO SHOW MORE TEXT */
+        .letter-wrapper.open .letter-content { transform: translateY(-220px); z-index: 5; height: auto; min-height: 100%; }
+        
+        .seal {
+            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            width: 60px; height: 60px; background: #9b1b1b; border-radius: 50%;
+            z-index: 5; display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; transition: opacity 0.3s;
+        }
+        .letter-wrapper.open .seal { opacity: 0; }
+
+        .timer-box { font-family: monospace; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px; color: #ffeb3b; border: 1px solid #ffeb3b; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center">
+
+    <div id="particles"></div>
+    <div id="stars-container" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none;"></div>
+
+    <div id="page1" class="relative z-10 w-full max-w-3xl text-center space-y-10 p-4">
+        <div class="flex justify-end">
+            <button onclick="window.location.href=window.location.href" class="bg-white/20 hover:bg-white/40 text-pink-700 px-4 py-1 rounded-full text-sm font-bold transition">Refresh ↻</button>
+        </div>
+        <h1 class="romantic text-6xl md:text-8xl drop-shadow-sm">Will you be my Valentine?</h1>
+        <div id="map"></div>
+        <div class="flex flex-row gap-12 items-center justify-center h-24 relative w-full">
+            <button onclick="handleYes()" class="btn-yes text-2xl font-black py-4 px-16 rounded-full transition-all transform hover:scale-110">YES!</button>
+            <button id="no-btn" onmouseover="handleNoMove()" onclick="handleNoMove()" class="font-black py-4 px-12 rounded-full absolute text-xl transition-all duration-75">No</button>
+        </div>
+    </div>
+
+    <div id="page2" class="w-full max-w-4xl text-center flex flex-col items-center">
+        <h2 class="romantic text-5xl text-white mb-6">I knew you'd say Yes! ❤️</h2>
+        
+        <div class="w-64 h-64 border-8 border-white rounded-2xl overflow-hidden shadow-2xl rotate-3 mb-6 bg-white">
+            <img src="https://lh3.googleusercontent.com/d/1EgS9ng9HiIm62jGW5d0ZP3saRdBQWdew" alt="Kirthika & Kevin" class="w-full h-full object-cover">
+        </div>
+
+        <div class="promise-card w-full max-w-lg mb-6">
+            <p class="text-xl font-bold">✨ My Pinky Promise ✨</p>
+            <p class="mt-2 italic">"Unga next birthdayku na enga irundhalum epdiyachum Kevin kita vandhuruva, adhuvara please bathrama en kevin ah pathukonga"</p>
+        </div>
+
+        <p class="text-white mb-2 font-bold uppercase tracking-widest text-sm">Countdown to OCT 22, 2026</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl">
+            <div class="timer-box">
+                <p class="text-xs text-white mb-1 uppercase">Ireland Time Remaining</p>
+                <div id="countdownIE" class="text-xl font-bold tracking-tighter">Calculating...</div>
+            </div>
+            <div class="timer-box">
+                <p class="text-xs text-white mb-1 uppercase">India Time Remaining</p>
+                <div id="countdownIN" class="text-xl font-bold tracking-tighter">Calculating...</div>
+            </div>
+        </div>
+
+        <div class="letter-wrapper" onclick="handleLetterClick(this)">
+            <div class="envelope-flap"></div>
+            <div class="seal">❤️</div>
+            <div class="letter-content text-left">
+                <p class="text-base mb-2"><b>My Dear Kevin Kuttyyy,</b></p>
+                <p class="text-sm leading-relaxed">
+                    Ivulo years la unga kuda irukumbothutha na rmba happy ah, safe ah iruka, enaku theriyum intha distance evulo kastama irukunu ana ivulo thoorama irundhu kuda neenga ena avulo bathrama happy ah pathukuringa kevin, enoda veetla ena pathukitathu vida, ellaraiyum vida💛<br><br>
+                    Insecurities ila, adhigama bayapdurathu ila, rmba peaceful ah thungura Kevin (nightmares kuda varathu ila ipola note panniya😁)<br><br>
+                    Thank you so much for being there for me and for letting me be.<br><br>
+                    I love you.
+                </p>
+                <p class="mt-6 text-sm"><b>Forever only yours✨</b>
+            </div>
+            <div class="envelope"></div>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-6 mt-20 mb-10">
+            <a href="https://youtu.be/ORnl9xFSgus?si=PG2P-kn1jPcoW02V&t=40" onclick="playClick()" target="_blank" class="bg-red-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition"> Valentine's day spl song 🎥 </a>
+            <a href="https://open.spotify.com/playlist/7kLGhqh5A9GL4vf50PkoqH?si=e1fb7c463f694d07&pt=08522511093be6e29e8e93d71ad3f656" onclick="playClick()" target="_blank" class="bg-green-500 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition"> Playlist for Kevin 🎵</a>
+        </div>
+        
+        <button onclick="goBack()" class="mt-8 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-full border border-white/30 transition shadow-lg">← Go Back</button>
+    </div>
+
+    <script>
+        let isPage2 = false;
+        let particleInterval;
+        let audioUnlocked = false;
+        
+        const urlYesSound = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3';
+        const urlNoSound = 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3';
+        const urlClickSound = 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3';
+
+        const sndYes = new Audio(urlYesSound); 
+        const sndNo = new Audio(urlNoSound); 
+        const sndClick = new Audio(urlClickSound); 
+
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            sndYes.play().then(() => { sndYes.pause(); sndYes.currentTime = 0; });
+            sndNo.play().then(() => { sndNo.pause(); sndNo.currentTime = 0; });
+            sndClick.play().then(() => { sndClick.pause(); sndClick.currentTime = 0; });
+            audioUnlocked = true;
+        }
+
+        window.addEventListener('mousedown', () => {
+            unlockAudio();
+            playClick();
+        });
+
+        const particlesContainer = document.getElementById('particles');
+        const emojis = ['🏍️', '🍫', '🍮', '🏖️', '🥙', '💖', '❤️', '🌹', '🌸', '💋','✨', '💌', '💛', '🎮'];
+        const petals = ['🌹', '🌸', '🌷', '🌺', '💖'];
+
+        function createParticle() {
+            const div = document.createElement('div');
+            div.className = 'bg-element';
+            const pool = isPage2 ? petals : emojis;
+            div.innerText = pool[Math.floor(Math.random() * pool.length)];
+            div.style.left = Math.random() * 100 + 'vw';
+            div.style.top = "-50px";
+            div.style.animationDuration = (Math.random() * 3 + 4) + 's'; 
+            particlesContainer.appendChild(div);
+            setTimeout(() => div.remove(), 5000);
+        }
+        
+        particleInterval = setInterval(createParticle, 500);
+
+        const map = L.map('map', {zoomControl: false, attributionControl: false}).setView([33.0, 30.0], 2);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        const maynooth = [53.3813, -6.5918];
+        const hosur = [12.7409, 77.8253];
+
+        L.marker(hosur, {icon: L.divIcon({ className: 'pulse-icon', html: '<span>💖</span>' })})
+            .addTo(map)
+            .bindTooltip("Kevin Kuttyyy💛", {
+                permanent: true, 
+                direction: 'bottom', 
+                offset: [0, 25], 
+                className: 'custom-label'
+            });
+
+        L.marker(maynooth, {icon: L.divIcon({ className: 'pulse-icon', html: '<span>🏠</span>' })})
+            .addTo(map)
+            .bindTooltip("Kirthika 🥹", {
+                permanent: true, 
+                direction: 'bottom', 
+                offset: [0, 25], 
+                className: 'custom-label'
+            });
+
+        const polyline = L.polyline([hosur, [45, 35], maynooth], { color: '#d81b60', weight: 4, dashArray: '8, 12' }).addTo(map);
+        map.fitBounds(polyline.getBounds(), {padding: [50, 50]});
+
+        function handleNoMove() {
+            unlockAudio();
+            sndNo.currentTime = 0;
+            sndNo.play().catch(e => {});
+
+            const btn = document.getElementById('no-btn');
+            const x = Math.random() * (window.innerWidth - btn.clientWidth - 40);
+            const y = Math.random() * (window.innerHeight - btn.clientHeight - 40);
+            btn.style.position = 'fixed'; 
+            btn.style.left = x + 'px'; 
+            btn.style.top = y + 'px';
+        }
+
+        function playClick() { 
+            sndClick.currentTime = 0;
+            sndClick.play().catch(e => {}); 
+        }
+
+        function handleYes() {
+            unlockAudio();
+            sndNo.pause();
+            sndYes.currentTime = 0;
+            sndYes.play().catch(e => {});
+            
+            clearInterval(particleInterval);
+            isPage2 = true;
+            particlesContainer.innerHTML = '';
+
+            const shower = setInterval(createParticle, 80);
+            setTimeout(() => {
+                clearInterval(shower);
+            }, 5000);
+
+            document.getElementById('page1').style.display = 'none';
+            document.getElementById('page2').style.display = 'flex';
+            document.body.style.background = '#0a0e1a';
+            document.body.style.overflowY = 'auto'; 
+            createStars();
+            startCountdown();
+        }
+
+        function goBack() {
+            isPage2 = false;
+            particlesContainer.innerHTML = '';
+            particleInterval = setInterval(createParticle, 500);
+            document.getElementById('page2').style.display = 'none';
+            document.getElementById('page1').style.display = 'block';
+            document.body.style.background = 'linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%)';
+            const btn = document.getElementById('no-btn');
+            btn.style.position = 'absolute';
+            btn.style.left = 'auto';
+            btn.style.top = 'auto';
+        }
+
+        function handleLetterClick(el) {
+            el.classList.toggle('open');
+        }
+
+        function createStars() {
+            const container = document.getElementById('stars-container');
+            container.innerHTML = '';
+            for(let i=0; i<100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(star);
+            }
+        }
+
+        function startCountdown() {
+            setInterval(() => {
+                if(!isPage2) return;
+                const now = new Date();
+                const targetIndia = new Date("2026-10-22T00:00:00+05:30").getTime();
+                const targetIreland = new Date("2026-10-22T00:00:00+01:00").getTime();
+                const diffIN = targetIndia - now.getTime();
+                const diffIE = targetIreland - now.getTime();
+
+                const format = (diff) => {
+                    if (diff <= 0) return "Arrived! ❤️";
+                    const d = Math.floor(diff / (86400000));
+                    const h = Math.floor((diff % 86400000) / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    return `${d}d ${h}h ${m}m ${s}s`;
+                };
+                document.getElementById('countdownIE').innerText = format(diffIE);
+                document.getElementById('countdownIN').innerText = format(diffIN);
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
