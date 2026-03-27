@@ -2,6 +2,8 @@
 
 A beautifully crafted, single-page interactive web application designed with a romantic theme. This project features dynamic animations, a dual-timezone countdown, and integrated mapping.
 
+[**Live Demo**](https://keerthika-kaliyan.github.io/valentine/)
+
 #Features ✨
 
 - **Interactive Map:** Uses `Leaflet.js` to visualize the distance between Maynooth, Ireland, and Hosur, India, with custom pulse markers.
@@ -19,18 +21,10 @@ A beautifully crafted, single-page interactive web application designed with a r
 - **Maps:** [Leaflet.js](https://leafletjs.com/)
 - **Fonts:** Google Fonts (Dancing Script, Quicksand, Special Elite)
 
-#How to Deploy 🚀
+#How to Run Locally 🚀
 
-#Host via GitHub Pages (Recommended)
-This is the easiest way to get a live website link:
-1. Go to your repository on GitHub.
-2. Click on **Settings** (top tab).
-3. On the left sidebar, click **Pages**.
-4. Under **Build and deployment > Branch**, select `main` and `/ (root)`.
-5. Click **Save**. 
-6. Your site will be live at `https://<your-username>.github.io/<repository-name>/` within a few minutes.
-
-#Local Setup
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/your-username/your-repo-name.git](https://github.com/your-username/your-repo-name.git)
+   git clone [https://github.com/keerthika-kaliyan/valentine.git](https://github.com/keerthika-kaliyan/valentine.git)
+2. Open index.html in any modern web browser.
+3. Note: Ensure you have an active internet connection to load the Tailwind, Leaflet, and Font dependencies via CDN.
